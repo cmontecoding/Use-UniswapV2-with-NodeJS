@@ -13,9 +13,7 @@ if (!privateKey || !providerUrl) {
 
 const web3 = new Web3(providerUrl);
 
-// Manually defined ABI for UniswapV2Router with the required method
 const routerABI = [
-  // ABIs for other methods,
   {
     "inputs": [
       {
@@ -52,30 +50,33 @@ const routerABI = [
   }
 ];
 
-const routerAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'; // Replace with your UniswapV2Router contract address
+const routerAddress = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D';
 
 const wallet = new ethers.Wallet(privateKey);
 const signer = new ethers.Wallet(wallet.privateKey, web3);
 const routerContract = new web3.eth.Contract(routerABI, routerAddress);
 
-const amountIn = web3.utils.toWei('1', 'ether'); // 1 ETH
+const amountInWei = '1'; // 1 Wei
+const amountInHex = web3.utils.toHex(amountInWei);
+console.log(amountInHex); // Output: '0x1'
+
 const path = [
-  '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', // Token to buy (replace with token address)
   '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', // WETH address
+  '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', // UNI address
 ];
-const to = wallet.address; // Your wallet address
+const to = wallet.address;
 
 const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
 
 routerContract.methods.swapExactETHForTokens(
-  '0', // AmountOutMin - set this accordingly
+  '0',
   path,
   to,
   deadline
-).estimateGas({ from: wallet.address, value: amountIn })
+).estimateGas({ from: wallet.address, value: amountInHex })
   .then((gasEstimate) => {
     const txData = routerContract.methods.swapExactETHForTokens(
-      '0', // AmountOutMin - set this accordingly
+      '0',
       path,
       to,
       deadline
@@ -87,10 +88,10 @@ routerContract.methods.swapExactETHForTokens(
       to: routerAddress,
       from: wallet.address,
       data: txData,
-      value: web3.utils.toHex(amountIn),
+      value: amountInHex
     };
 
-    const tx = new Tx(txParams, { chain: 'goerli' }); // Change the chain as per your requirement
+    const tx = new Tx(txParams, { chain: 'goerli' });
 
     tx.sign(Buffer.from(privateKey, 'hex'));
 
